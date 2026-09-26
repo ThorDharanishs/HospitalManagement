@@ -4,7 +4,7 @@ using System.Text;
 
 namespace HospitalManagement.Service
 {
-    internal class AppointmentService
+    public class AppointmentService
     {
     }
 }
