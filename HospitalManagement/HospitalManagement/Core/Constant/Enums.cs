@@ -30,4 +30,9 @@ namespace HospitalManagement.Core.Constant
         Started,
         Completed,
     }
+    public enum DoctorStatus
+    {
+        Available = 1,
+        Busy,
+    }
 }
