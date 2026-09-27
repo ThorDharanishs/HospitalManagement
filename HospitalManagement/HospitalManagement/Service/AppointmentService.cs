@@ -1,9 +1,6 @@
 ﻿using HospitalManagement.Core.Constant;
 using HospitalManagement.Core.Model;
 using HospitalManagement.Repository;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Channels;
 
 namespace HospitalManagement.Service
@@ -29,30 +26,26 @@ namespace HospitalManagement.Service
             Appointment newAppointment = new Appointment(patientId, treatmentTime);
             this._appointmentRepository.AddNewAppointment(newAppointment);
             this._channel.Writer.TryWrite(newAppointment);
-            this._notificationService.Execute("Appointment booked", this._patientService.GetPatientName(patientId));
+            this._notificationService.Execute("Appointment booked", this._patientService.GetPatientName(patientId).Result);
         }
         public async Task ProcessAppointment()
         {
-            await foreach (Appointment appointment in
-                           this._channel.Reader.ReadAllAsync())
+            await foreach (Appointment appointment in this._channel.Reader.ReadAllAsync())
             {
                 _ = ProcessSingleAppointment(appointment);
             }
         }
 
-            private async Task ProcessSingleAppointment(
-            Appointment appointment)
-        {
+            private async Task ProcessSingleAppointment(Appointment appointment)
+            {
             Patient? patient = _patientService.GetPatient(appointment.PatientId);
-
             if (patient == null)
             {
                 this._notificationService.Execute("Appointment booked", "Guest");
                 return;
             }
 
-            Doctor? doctor =
-                _doctorService.GetAvailableDoctor(patient.Treatment);
+            Doctor? doctor = _doctorService.GetAvailableDoctor(patient.Treatment);
 
             if (doctor == null)
             {

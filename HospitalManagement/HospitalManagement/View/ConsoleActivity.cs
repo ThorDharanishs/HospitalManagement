@@ -8,7 +8,6 @@ namespace HospitalManagement.View
     public static class ConsoleActivity
     {
         private static readonly object _lock = new object();
-
         private static int _notificationRow = 1;
         private static int _currentRow = 0;
 
@@ -165,10 +164,7 @@ namespace HospitalManagement.View
                 for (int row = 0; row < Console.WindowHeight; row++)
                 {
                     Console.SetCursorPosition(startColumn, row);
-                    Console.Write(
-                        new string(
-                            ' ',
-                            Console.WindowWidth - startColumn));
+                    Console.Write(new string(' ', Console.WindowWidth - startColumn));
                 }
 
                 _notificationRow = 1;
@@ -207,11 +203,9 @@ namespace HospitalManagement.View
                 Console.SetCursorPosition(notificationColumn, _notificationRow);
                 string notification = $"[Notification] Patient: {patientName} | {message}";
                 int availableWidth = Console.WindowWidth - notificationColumn;
-                if (notification.Length > availableWidth)
-                {
-                    notification = notification[..availableWidth];
-                }
-                PrintInConsole(notification);
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine(notification);
+                Console.ResetColor();
                 _notificationRow++;
                 if (_notificationRow >= Console.WindowHeight)
                 {

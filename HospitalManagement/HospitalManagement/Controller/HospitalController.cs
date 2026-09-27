@@ -3,9 +3,6 @@ using HospitalManagement.Core.Model;
 using HospitalManagement.Helper;
 using HospitalManagement.Service;
 using HospitalManagement.View;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace HospitalManagement.Controller
 {
@@ -60,7 +57,7 @@ namespace HospitalManagement.Controller
         public void AddAppointment()
         {
             ConsoleActivity.ShowHeader("Book Appointment");
-            List<Patient> patients = this._patientService.GetAllPatient();
+            List<Patient> patients = this._patientService.GetAllPatient().Result;
             ConsoleActivity.DisplayPatients(patients);
 
             int choosenPatient = ConsoleActivity.GetIntegerInput("option");
@@ -72,7 +69,7 @@ namespace HospitalManagement.Controller
 
             Guid patientId = patients[choosenPatient - 1].PatientId;
             this._appointmentService.BookAppointment( patientId );
-            ConsoleActivity.PrintAndWait("Appointment booked successfully for patient - " + this._patientService.GetPatientName(patientId));
+            ConsoleActivity.PrintAndWait("Appointment booked successfully for patient - " + this._patientService.GetPatientName(patientId).Result);
         }
     }
 }

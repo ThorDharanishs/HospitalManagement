@@ -1,9 +1,11 @@
 ﻿using HospitalManagement.Core.Constant;
+using System.Text.Json.Serialization;
 
 namespace HospitalManagement.Core.Model
 {
     public class Patient
     {
+        [JsonConstructor]
         public Patient(Guid id, string name, Treatments treatment)
         {
             this.PatientId = id;

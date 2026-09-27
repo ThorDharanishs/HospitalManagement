@@ -13,23 +13,23 @@ namespace HospitalManagement.Service
         }
         public void AddNewPatient(string name, Treatments treatment)
         {
-            this._patientRepository.AddNewPatient(new Patient(name, treatment));
+            _= this._patientRepository.AddNewPatientAsync(new Patient(name, treatment));
         }
-        public List<Patient> GetAllPatient()
+        public async Task<List<Patient>> GetAllPatient()
         {
-            return this._patientRepository.GetAllPatient();
+            return await this._patientRepository.GetAllPatientAsync();
         }
-        public string GetPatientName(Guid id)
+        public async Task<string> GetPatientName(Guid id)
         {
-            return this._patientRepository.GetPatient(id)?.PatientName ?? "Guest";
+            return this._patientRepository.GetPatientAsync(id).Result!.PatientName ?? "Guest";
         }
         public Treatments GetPatientTreatment(Guid id)
         {
-            return this._patientRepository.GetPatient(id)!.Treatment;
+            return this._patientRepository.GetPatientAsync(id).Result!.Treatment;
         }
         public Patient? GetPatient(Guid id)
         {
-            return this._patientRepository.GetPatient(id);
+            return this._patientRepository.GetPatientAsync(id).Result;
         }
     }
 }

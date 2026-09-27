@@ -1,9 +1,6 @@
 ﻿using HospitalManagement.Core.Constant;
 using HospitalManagement.Core.Model;
 using HospitalManagement.FileHelper;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace HospitalManagement.Repository
 {
@@ -11,28 +8,34 @@ namespace HospitalManagement.Repository
     {
         private readonly string _patientFile = "patient.csv";
         private readonly CsvFileHandler<Patient> _csvFile;
-        private readonly List<Patient> _patients;
+
         public PatientRepository()
         {
-            this._patients = new List<Patient>();
             _csvFile = new CsvFileHandler<Patient>(
                 _patientFile,
                 PatientToCsv,
                 CsvToPatient);
         }
-        public void AddNewPatient(Patient patient)
+
+        public async Task AddNewPatientAsync(Patient patient, CancellationToken cancellationToken = default)
         {
-            _csvFile.Write(patient);
+            await _csvFile.WriteAsync(patient, cancellationToken);
         }
-        public List<Patient> GetAllPatient()
+
+        public async Task<List<Patient>> GetAllPatientAsync(CancellationToken cancellationToken = default)
         {
-            return _csvFile.ReadAll();
+            return await _csvFile.ReadAllAsync(cancellationToken);
         }
-        public Patient? GetPatient(Guid id)
+
+        public async Task<Patient?> GetPatientAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            return GetAllPatient()
-                .FirstOrDefault(x => x.PatientId == id);
+            List<Patient> patients =
+                await GetAllPatientAsync(cancellationToken);
+
+            return patients.FirstOrDefault(
+                patient => patient.PatientId == id);
         }
+
         private static string PatientToCsv(Patient patient)
         {
             return string.Join(",",
@@ -44,12 +47,26 @@ namespace HospitalManagement.Repository
 
         private static Patient CsvToPatient(string line)
         {
-            List<string> fields = CsvFileHandler<Patient>.Parse(line);
-            Treatments treatment;
-            Guid id;
-            Guid.TryParse(fields[0], out id);
-            Enum.TryParse<Treatments>(fields[2], out treatment);
-            return new Patient(id, fields[1], treatment);
+            List<string> fields =
+                CsvFileHandler<Patient>.Parse(line);
+
+            if (!Guid.TryParse(fields[0], out Guid id))
+            {
+                throw new InvalidDataException("Invalid patient ID in CSV file.");
+            }
+
+            if (!Enum.TryParse<Treatments>(
+                    fields[2],
+                    true,
+                    out Treatments treatment))
+            {
+                throw new InvalidDataException("Invalid treatment in CSV file.");
+            }
+
+            return new Patient(
+                id,
+                fields[1],
+                treatment);
         }
     }
 }

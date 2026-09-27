@@ -5,12 +5,13 @@
         private readonly string _filePath;
         private readonly Func<T, string> _convertToCsv;
         private readonly Func<string, T> _convertFromCsv;
-
-        public CsvFileHandler(string filePath,Func<T, string> convertToCsv,Func<string, T> convertFromCsv)
+        private readonly SemaphoreSlim _fileLock;
+        public CsvFileHandler(string filePath, Func<T, string> convertToCsv, Func<string, T> convertFromCsv)
         {
             _filePath = filePath;
             _convertToCsv = convertToCsv;
             _convertFromCsv = convertFromCsv;
+            _fileLock = new SemaphoreSlim(1, 1);
             CreateFileIfNotExists();
         }
 
@@ -22,32 +23,65 @@
             }
         }
 
-        public void Write(T data)
+        public async Task WriteAsync(T data, CancellationToken cancellationToken = default)
         {
             string csvLine = _convertToCsv(data);
-            File.AppendAllText(_filePath, csvLine + Environment.NewLine);
-        }
-
-        public void WriteAll(IEnumerable<T> data)
-        {
-            IEnumerable<string> csvLines = data.Select(_convertToCsv);
-            File.WriteAllLines(_filePath, csvLines);
-        }
-
-        public List<T> ReadAll()
-        {
-            List<T> result = new List<T>();
-            foreach (string line in File.ReadLines(_filePath))
+            await _fileLock.WaitAsync(cancellationToken);
+            try
             {
-                if (string.IsNullOrWhiteSpace(line))
+                await File.AppendAllTextAsync(_filePath, csvLine + Environment.NewLine, cancellationToken);
+            }
+            finally
+            {
+                _fileLock.Release();
+            }
+        }
+
+        public async Task WriteAllAsync(IEnumerable<T> data, CancellationToken cancellationToken = default)
+            {
+            IEnumerable<string> csvLines = data.Select(_convertToCsv);
+            await _fileLock.WaitAsync(cancellationToken);
+            try
+            {
+                await File.WriteAllLinesAsync(_filePath, csvLines, cancellationToken);
+            }
+            finally
+            {
+                _fileLock.Release();
+            }
+        }
+
+        public async Task<List<T>> ReadAllAsync(CancellationToken cancellationToken = default)
+        {
+            await _fileLock.WaitAsync(cancellationToken);
+
+            try
+            {
+                List<T> result = new List<T>();
+                using StreamReader reader = new StreamReader(_filePath);
+                while (true)
                 {
-                    continue;
+                    cancellationToken.ThrowIfCancellationRequested();
+                    string? line = await reader.ReadLineAsync();
+                    if (line == null)
+                    {
+                        break;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(line))
+                    {
+                        continue;
+                    }
+
+                    result.Add(_convertFromCsv(line));
                 }
 
-                result.Add(_convertFromCsv(line));
+                return result;
             }
-
-            return result;
+            finally
+            {
+                _fileLock.Release();
+            }
         }
 
         public static string Escape(string value)
@@ -57,7 +91,7 @@
                 value = value.Replace("\"", "\"\"");
             }
 
-            if (value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r'))
+            if (value.Contains(',') || value.Contains('"'))
             {
                 return $"\"{value}\"";
             }
@@ -68,27 +102,27 @@
         public static List<string> Parse(string line)
         {
             List<string> fields = new List<string>();
-            bool insideQuotes = false;
+            bool q = false;
             string currentField = string.Empty;
             for (int i = 0; i < line.Length; i++)
             {
                 char current = line[i];
                 if (current == '"')
                 {
-                    if (insideQuotes && i + 1 < line.Length && line[i + 1] == '"')
+                    if (q && i + 1 < line.Length && line[i + 1] == '"')
                     {
                         currentField += '"';
                         i++;
                     }
                     else
                     {
-                        insideQuotes = !insideQuotes;
+                        q = !q;
                     }
 
                     continue;
                 }
 
-                if (current == ',' && !insideQuotes)
+                if (current == ',' && !q)
                 {
                     fields.Add(currentField);
                     currentField = string.Empty;

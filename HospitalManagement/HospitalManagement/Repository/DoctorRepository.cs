@@ -1,10 +1,5 @@
 ﻿using HospitalManagement.Core.Constant;
 using HospitalManagement.Core.Model;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Net.Http.Headers;
-using System.Text;
 
 namespace HospitalManagement.Repository
 {
