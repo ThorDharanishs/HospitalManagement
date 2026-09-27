@@ -4,10 +4,9 @@ namespace HospitalManagement.Core.Model
 {
     public class Appointment
     {
-        public Appointment(Guid patientId, Guid doctorId, TimeSpan treatmentTime)
+        public Appointment(Guid patientId, TimeSpan treatmentTime)
         {
             this.PatientId = patientId;
-            this.DoctorId = doctorId;
             this.TreatmentTime = treatmentTime;
             this.CreatedDate = DateTime.Now;
             this.TreatmentStatus = TreatmentStatus.AppointmentBooked;

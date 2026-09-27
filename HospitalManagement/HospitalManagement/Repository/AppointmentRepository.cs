@@ -17,11 +17,17 @@ namespace HospitalManagement.Repository
         }
         public void AddNewAppointment(Appointment appointment)
         {
-            this._appointments.Add(appointment);
+            lock(_lock)
+            {
+                this._appointments.Add(appointment);
+            }
         }
         public List<Appointment> GetAppointments()
         {
-            return this._appointments;
+            lock(this._lock)
+            {
+                return this._appointments;
+            }
         }
         public Appointment? GetAppointmentById(Guid id)
         {

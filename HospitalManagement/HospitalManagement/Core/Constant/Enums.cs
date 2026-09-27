@@ -35,4 +35,12 @@ namespace HospitalManagement.Core.Constant
         Available = 1,
         Busy,
     }
+    public enum MenuItem
+    {
+        AddPatient = 1,
+        AddAppointment,
+        ViewTreatment,
+        ViewDashboard,
+        Exit,
+    }
 }

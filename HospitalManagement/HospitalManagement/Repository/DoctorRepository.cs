@@ -2,6 +2,8 @@
 using HospitalManagement.Core.Model;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Net.Http.Headers;
 using System.Text;
 
 namespace HospitalManagement.Repository
@@ -11,11 +13,27 @@ namespace HospitalManagement.Repository
         private readonly object _lockDoctor;
         private readonly Dictionary<Spealization, Treatments[]> _treatments;
         private readonly List<Doctor> _doctors;
+        private readonly Dictionary<Treatments, TimeSpan> _treatmentsDurations;
         public DoctorRepository()
         {
             this._doctors = this.SetDoctor();
             this._lockDoctor = new object();
             this._treatments = this.SetTreatmentPlan();
+            this._treatmentsDurations = this.SetTreatmentDuration();
+        }
+        public Dictionary<Treatments, TimeSpan> SetTreatmentDuration()
+        {
+            return new Dictionary<Treatments, TimeSpan>
+        {
+        { Treatments.Fever, TimeSpan.FromSeconds(15) },
+        { Treatments.Cought, TimeSpan.FromSeconds(10) },
+        { Treatments.Bone, TimeSpan.FromSeconds(30) },
+        { Treatments.LungCancer, TimeSpan.FromSeconds(60) },
+        { Treatments.BrainTumor, TimeSpan.FromSeconds(90) },
+        { Treatments.Nerve, TimeSpan.FromSeconds(45) },
+        { Treatments.Kidney, TimeSpan.FromSeconds(40) },
+        { Treatments.Brain, TimeSpan.FromSeconds(50) }
+        };
         }
         public Dictionary<Spealization, Treatments[]> SetTreatmentPlan()
         {
@@ -96,7 +114,10 @@ namespace HospitalManagement.Repository
         }
         public List<Doctor> GetAllDoctor()
         {
-            return this._doctors;
+            lock(this._lockDoctor)
+            {
+                return this._doctors;
+            }
         }
         public Doctor? GetDoctorById(Guid id)
         {
@@ -134,6 +155,27 @@ namespace HospitalManagement.Repository
         public Dictionary<Spealization, Treatments[]> GetTreatmentPlan()
         {
             return this._treatments;
+        }
+        public Dictionary<Treatments, TimeSpan> GetTreatmentDuration()
+        {
+            return this._treatmentsDurations;
+        }
+        public bool TryAssignDoctor(Spealization specialization, out Doctor? doctor)
+        {
+            lock (this._lockDoctor)
+            {
+                doctor = this._doctors.FirstOrDefault(
+                    d => d.Spealization == specialization &&
+                         d.Status == DoctorStatus.Available);
+
+                if (doctor == null)
+                {
+                    return false;
+                }
+
+                doctor.Status = DoctorStatus.Busy;
+                return true;
+            }
         }
     }
 }

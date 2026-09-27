@@ -1,4 +1,5 @@
 ﻿using HospitalManagement.Core.Constant;
+using HospitalManagement.Core.Model;
 using HospitalManagement.Repository;
 using System;
 using System.Collections.Generic;
@@ -8,12 +9,10 @@ namespace HospitalManagement.Service
 {
     public class DoctorService
     {
-        private readonly object _lock;
         private readonly DoctorRepository _doctorRepository;
         public DoctorService(DoctorRepository doctorRepository)
         {
             this._doctorRepository = doctorRepository;
-            this._lock = new object();
         }
         public string GetDoctorName(Guid id)
         {
@@ -34,16 +33,21 @@ namespace HospitalManagement.Service
                 .FirstOrDefault(plan => plan.Value.Contains(treatment))
                 .Key;
         }
-        public Guid GetAvailableDoctor(Treatments treatment)
+        public Doctor? GetAvailableDoctor(Treatments treatment)
         {
-            Spealization spealizationRequired = this.GetSpealization(treatment);
-            lock(this._lock)
-            {
-                return this._doctorRepository.GetAllDoctor()
-                    .FirstOrDefault(doctor => doctor.Status == DoctorStatus.Available && doctor.Spealization == spealizationRequired)
-                    ?.Id ?? default;
-            }
-        }
+            Spealization specialization = GetSpealization(treatment);
 
+            bool assigned = _doctorRepository.TryAssignDoctor(
+                    specialization,
+                    out Doctor? doctor);
+
+            return assigned ? doctor : null;
+        }
+        public TimeSpan GetTreatmentDuration(Treatments treatment)
+        {
+            return this._doctorRepository.GetTreatmentDuration()
+                .FirstOrDefault(time => time.Key == treatment)
+                .Value;
+        }
     }
 }

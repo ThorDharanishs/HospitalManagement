@@ -1,10 +1,6 @@
 ﻿using HospitalManagement.Core.Constant;
 using HospitalManagement.Core.Model;
 using HospitalManagement.Repository;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Text.RegularExpressions;
 
 namespace HospitalManagement.Service
 {
@@ -19,9 +15,21 @@ namespace HospitalManagement.Service
         {
             this._patientRepository.AddNewPatient(new Patient(name, treatment));
         }
+        public List<Patient> GetAllPatient()
+        {
+            return this._patientRepository.GetAllPatient();
+        }
         public string GetPatientName(Guid id)
         {
-            return this._patientRepository.GetPatientName(id) ?? "Guest";
+            return this._patientRepository.GetPatient(id)?.PatientName ?? "Guest";
+        }
+        public Treatments GetPatientTreatment(Guid id)
+        {
+            return this._patientRepository.GetPatient(id)!.Treatment;
+        }
+        public Patient? GetPatient(Guid id)
+        {
+            return this._patientRepository.GetPatient(id);
         }
     }
 }
